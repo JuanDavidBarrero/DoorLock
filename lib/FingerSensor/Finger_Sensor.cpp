@@ -57,6 +57,8 @@ int FingerSensor::identifingFinger()
     if (p != FINGERPRINT_OK)
         return -1;
 
+    
+
     return finger.fingerID;
 }
 
