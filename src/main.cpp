@@ -17,7 +17,7 @@ void IRAM_ATTR onTimer()
 {
   portENTER_CRITICAL_ISR(&timerMux);
   timeOut = true;
-  timerWrite(timer, 0);
+  Serial.println("Interrumpo");
   portEXIT_CRITICAL_ISR(&timerMux);
 }
 
@@ -28,7 +28,6 @@ void setup()
 
   timer = timerBegin(0, 80, true);
   timerAttachInterrupt(timer, &onTimer, true);
-  timerAlarmWrite(timer, 10000000, false);
 
   Sensor.initFingerSentor();
   if (!Sensor.checkDB())
@@ -44,6 +43,7 @@ void loop()
 
 void trigger0()
 {
+  timerWrite(timer, 0);
   timerAlarmWrite(timer, 10000000, false);
   timerAlarmEnable(timer);
   myNex.writeStr("page 5");
@@ -56,11 +56,14 @@ void trigger0()
       myNex.writeStr("page 9");
       delay(1000);
       myNex.writeStr("page 0");
-      timeOut=false;
+      timeOut = false;
+      timerWrite(timer, 0);
       return;
     }
   }
 
+  timerAlarmDisable(timer);
+  timeOut = false;
   myNex.writeStr("page 1");
   myNex.writeStr("t1.txt", family[personID - 1]);
   personID = -1;
