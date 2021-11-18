@@ -1,9 +1,10 @@
 #include <Arduino.h>
-#include <Finger_Sensor.h>
 #include <EasyNextionLibrary.h>
+#include <Finger_Sensor.h>
 
 hw_timer_t *timer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
+void onTimer();
 
 #define NextionScreen Serial1
 EasyNex myNex(NextionScreen);
@@ -13,13 +14,13 @@ int personID = -1;
 bool timeOut = false;
 String family[127];
 
-void IRAM_ATTR onTimer()
+struct Family
 {
-  portENTER_CRITICAL_ISR(&timerMux);
-  timeOut = true;
-  Serial.println("Interrumpo");
-  portEXIT_CRITICAL_ISR(&timerMux);
-}
+  String name;
+  int id;
+};
+Family members[6];
+int pos = 0;
 
 void setup()
 {
@@ -73,23 +74,28 @@ void trigger0()
 
 void trigger1()
 {
-  String nombre = myNex.readStr("t1.txt");
-  int id = myNex.readNumber("n0.val");
-  if (id == 0 || id > 127)
+  members[pos].name = myNex.readStr("t1.txt");
+  members[pos].id = myNex.readNumber("n0.val");
+  if (members[pos].id == 0 || members[pos].id > 127)
     return;
   myNex.writeStr("page 5");
-  Sensor.enrollFinger(id);
+  Sensor.enrollFinger(members[pos].id);
   myNex.writeStr("page 6");
   delay(1000);
   myNex.writeStr("page 5");
-  Sensor.verifyFinger(id);
-  family[id - 1] = nombre;
+  Sensor.verifyFinger(members[pos].id);
   myNex.writeStr("page 7");
   delay(1500);
   myNex.writeStr("page 2");
-  // Serial.printf("El nombre enviado fue %s\n", nombre);
+  pos ++;
 }
 
+void IRAM_ATTR onTimer()
+{
+  portENTER_CRITICAL_ISR(&timerMux);
+  timeOut = true;
+  portEXIT_CRITICAL_ISR(&timerMux);
+}
 // void trigger2()
 // {
 //   Serial.printf("id para ser eliminado\n");
