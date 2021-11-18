@@ -72,6 +72,7 @@ int FingerSensor::enrollFinger(int id)
         Serial.println("Unknown error");
         return p;
     }
+    return 1;
 }
 
 int FingerSensor::verifyFinger(int id)
