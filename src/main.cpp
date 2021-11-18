@@ -1,9 +1,13 @@
 #include <Arduino.h>
 #include <EasyNextionLibrary.h>
+#include <ArduinoJson.h>
+
 #include <Finger_Sensor.h>
 #include <Storage.h>
 
 Storage DB;
+DynamicJsonDocument familyData(300);
+DynamicJsonDocument newMember(150);
 
 hw_timer_t *timer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
@@ -15,15 +19,17 @@ EasyNex myNex(NextionScreen);
 FingerSensor Sensor;
 int personID = -1;
 bool timeOut = false;
-String family[127];
 
 struct Family
 {
   String name;
   int id;
 };
-Family members[6];
-int pos = 0;
+Family members[127];
+
+void prossesAndSaveData(String, int);
+void loadInfo(File);
+int seekMatch(int);
 
 void setup()
 {
@@ -32,8 +38,7 @@ void setup()
   DB.initSPIFFS();
 
   File data = DB.openData();
-
-  
+  loadInfo(data);
 
   timer = timerBegin(0, 80, true);
   timerAttachInterrupt(timer, &onTimer, true);
@@ -73,8 +78,11 @@ void trigger0()
 
   timerAlarmDisable(timer);
   timeOut = false;
+
+  int id = seekMatch(personID);
+
   myNex.writeStr("page 1");
-  myNex.writeStr("t1.txt", family[personID - 1]);
+  myNex.writeStr("t1.txt", members[id].name);
   personID = -1;
   delay(3000);
   myNex.writeStr("page 0");
@@ -82,20 +90,23 @@ void trigger0()
 
 void trigger1()
 {
-  members[pos].name = myNex.readStr("t1.txt");
-  members[pos].id = myNex.readNumber("n0.val");
-  if (members[pos].id == 0 || members[pos].id > 127)
+  String nombre = myNex.readStr("t1.txt");
+  int id = myNex.readNumber("n0.val");
+
+  if (id == 0 || id > 127)
     return;
   myNex.writeStr("page 5");
-  Sensor.enrollFinger(members[pos].id);
+  Sensor.enrollFinger(id);
   myNex.writeStr("page 6");
   delay(1000);
   myNex.writeStr("page 5");
-  Sensor.verifyFinger(members[pos].id);
+  Sensor.verifyFinger(id);
   myNex.writeStr("page 7");
+
+  prossesAndSaveData(nombre, id);
+
   delay(1500);
   myNex.writeStr("page 2");
-  pos ++;
 }
 
 void IRAM_ATTR onTimer()
@@ -103,6 +114,51 @@ void IRAM_ATTR onTimer()
   portENTER_CRITICAL_ISR(&timerMux);
   timeOut = true;
   portEXIT_CRITICAL_ISR(&timerMux);
+}
+
+void prossesAndSaveData(String nombre, int id)
+{
+  String info = "";
+  newMember["name"] = nombre;
+  newMember["id"] = id;
+  familyData.add(newMember);
+  serializeJson(familyData, info);
+  if (DB.saveData(info))
+  {
+    Serial.println("Información guardada");
+    File data = DB.openData();
+    loadInfo(data);
+  }
+}
+
+void loadInfo(File data)
+{
+  deserializeJson(familyData, data);
+  int size = familyData.size();
+  if (size == 0)
+    return;
+  for (int i = 0; i < size; i++)
+  {
+    String nombre = familyData[i]["name"];
+    members[i].name = nombre;
+    members[i].id = familyData[i]["id"];
+  }
+  DB.closeData(data);
+}
+
+int seekMatch(int personID)
+{
+
+  int size = sizeof(members) / sizeof(members[0]);
+
+  for (int i = 0; i < size; i++)
+  {
+    if (members[i].id == personID)
+    {
+      return i;
+    }
+  }
+  return -1;
 }
 // void trigger2()
 // {

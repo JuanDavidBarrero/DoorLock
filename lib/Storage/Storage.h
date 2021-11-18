@@ -13,6 +13,7 @@ public:
     void initSPIFFS();
     File openData();
     bool saveData(String);
+    void closeData(File);
 };
 
 

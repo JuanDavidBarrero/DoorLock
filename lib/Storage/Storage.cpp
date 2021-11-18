@@ -18,9 +18,14 @@ File Storage::openData(){
     return data;
 }
 
-bool Storage::saveData(String info){
-    if(info.length() < 0) return;
-    File data = SPIFFS.open("/data.json",FILE_WRITE);
+void Storage::closeData(File data){
     data.close();
-    return data.println(info);
+}
+
+bool Storage::saveData(String info){
+    if(info.length() < 0) return 0;
+    File data = SPIFFS.open("/data.json",FILE_WRITE);
+    bool resp = data.println(info);
+    data.close();
+    return resp;
 }
