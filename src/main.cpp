@@ -1,6 +1,9 @@
 #include <Arduino.h>
 #include <EasyNextionLibrary.h>
 #include <Finger_Sensor.h>
+#include <Storage.h>
+
+Storage DB;
 
 hw_timer_t *timer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
@@ -26,6 +29,11 @@ void setup()
 {
   Serial.begin(115200);
   myNex.begin(9600);
+  DB.initSPIFFS();
+
+  File data = DB.openData();
+
+  
 
   timer = timerBegin(0, 80, true);
   timerAttachInterrupt(timer, &onTimer, true);
