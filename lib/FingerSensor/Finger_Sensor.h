@@ -9,12 +9,11 @@ class FingerSensor
 {
 private:
     Adafruit_Fingerprint finger = Adafruit_Fingerprint(&SensorSerial);
-    int getFingerprintEnroll(int);
-
 public:
     FingerSensor();
     void initFingerSentor();
-    void enrollFinger(int);
+    int enrollFinger(int);
+    int verifyFinger(int);
     bool checkDB();
     int identifingFinger();
     int deleteFingerPrintFromDB(int);

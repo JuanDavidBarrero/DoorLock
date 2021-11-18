@@ -3,11 +3,14 @@
 #include <EasyNextionLibrary.h>
 
 #define NextionScreen Serial1
-
 EasyNex myNex(NextionScreen);
 
 FingerSensor Sensor;
-int personID;
+int personID = -1;
+unsigned long timePage = 0;
+unsigned long prevtime = 0;
+unsigned long interval = 10000;
+String family[127];
 
 void setup()
 {
@@ -27,32 +30,49 @@ void loop()
 
 void trigger0()
 {
-  Serial.printf("El boton de reconocimiento fue presionado\n");
   myNex.writeStr("page 5");
-  delay(2000);
+
+  while (personID == -1)
+  {
+    personID = Sensor.identifingFinger();
+    timePage = millis();
+    if (timePage - prevtime > interval)
+    {
+      prevtime = millis();
+      myNex.writeStr("page 9");
+      delay(1000);
+      myNex.writeStr("page 0");
+      return;
+    }
+  }
   myNex.writeStr("page 1");
-  myNex.writeStr("t1.txt", "Juan David");
+  myNex.writeStr("t1.txt", family[personID - 1]);
+  personID = -1;
   delay(3000);
   myNex.writeStr("page 0");
 }
 
 void trigger1()
 {
-  Serial.printf("Enviando nombre\n");
   String nombre = myNex.readStr("t1.txt");
-  Serial.printf("El nombre enviado fue %s\n", nombre);
+  int id = myNex.readNumber("n0.val");
+  if(id == 0) return;
+  myNex.writeStr("page 5");
+  Sensor.enrollFinger(id);
+  myNex.writeStr("page 6");
+  delay(500);
+  myNex.writeStr("page 5");
+  Sensor.verifyFinger(id);
+  family[id-1] = nombre;
+  myNex.writeStr("page 7");
+  delay(1500);
+  myNex.writeStr("page 2");
+  // Serial.printf("El nombre enviado fue %s\n", nombre);
 }
 
-void trigger2()
-{
-  Serial.printf("id para ser eliminado\n");
-  int id = myNex.readNumber("t1.pco");
-  Serial.printf("El nombre enviado fue %i\n", id);
-}
-
-//  personID = Sensor.identifingFinger();
-//   if(personID != -1){
-//     Serial.printf("The finger id correspont to %i \n", personID);
-//     delay(3000);
-//   }
-//   Serial.print("Plese place your finger\n");
+// void trigger2()
+// {
+//   Serial.printf("id para ser eliminado\n");
+//   int id = myNex.readNumber("t1.pco");
+//   Serial.printf("El nombre enviado fue %i\n", id);
+// }

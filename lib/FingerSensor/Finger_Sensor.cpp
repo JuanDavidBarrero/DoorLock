@@ -19,83 +19,13 @@ void FingerSensor::initFingerSentor()
     Serial.print("Found finger print sensor \n");
 }
 
-void FingerSensor::enrollFinger(int id)
+int FingerSensor::enrollFinger(int id)
 {
     if (id == 0)
-        return;
+        return -1;
     Serial.printf("Enrolling ID # %i \n", id);
-    while (!getFingerprintEnroll(id))
-    {
-    }
-}
-
-bool FingerSensor::checkDB()
-{
-    finger.getTemplateCount();
-
-    if (finger.templateCount == 0)
-    {
-        Serial.print("Sensor doesn't contain any fingerpirnt data. please run the 'enroll' exmaple\n");
-        return false;
-    }
-
-    Serial.print("Please place your finger");
-    return true;
-}
-
-int FingerSensor::identifingFinger()
-{
-    int p = finger.getImage();
-    if (p != FINGERPRINT_OK)
-        return -1;
-
-    p = finger.image2Tz();
-    if (p != FINGERPRINT_OK)
-        return -1;
-
-    p = finger.fingerFastSearch();
-    if (p != FINGERPRINT_OK)
-        return -1;
-
-    
-
-    return finger.fingerID;
-}
-
-int FingerSensor::deleteFingerPrintFromDB(int id)
-{
-    uint8_t p = -1;
-
-    p = finger.deleteModel(id);
-
-    if (p == FINGERPRINT_OK)
-    {
-        Serial.println("Deleted!");
-    }
-    else if (p == FINGERPRINT_PACKETRECIEVEERR)
-    {
-        Serial.println("Communication error");
-    }
-    else if (p == FINGERPRINT_BADLOCATION)
-    {
-        Serial.println("Could not delete in that location");
-    }
-    else if (p == FINGERPRINT_FLASHERR)
-    {
-        Serial.println("Error writing to flash");
-    }
-    else
-    {
-        Serial.print("Unknown error: 0x");
-        Serial.println(p, HEX);
-    }
-
-    return p;
-}
-
-int FingerSensor::getFingerprintEnroll(int id)
-{
     int p = -1;
+
     Serial.printf("Waiting for valid finger to enroll as # %i \n", id);
     while (p != FINGERPRINT_OK)
     {
@@ -142,11 +72,14 @@ int FingerSensor::getFingerprintEnroll(int id)
         Serial.println("Unknown error");
         return p;
     }
+}
 
+int FingerSensor::verifyFinger(int id)
+{
     Serial.println("Remove finger");
     delay(2000);
 
-    p = 0;
+    int p = 0;
     while (p != FINGERPRINT_NOFINGER)
     {
         p = finger.getImage();
@@ -252,4 +185,65 @@ int FingerSensor::getFingerprintEnroll(int id)
     }
 
     return true;
+}
+
+bool FingerSensor::checkDB()
+{
+    finger.getTemplateCount();
+
+    if (finger.templateCount == 0)
+    {
+        Serial.print("Sensor doesn't contain any fingerpirnt data. please run the 'enroll' exmaple\n");
+        return false;
+    }
+
+    return true;
+}
+
+int FingerSensor::identifingFinger()
+{
+    int p = finger.getImage();
+    if (p != FINGERPRINT_OK)
+        return -1;
+
+    p = finger.image2Tz();
+    if (p != FINGERPRINT_OK)
+        return -1;
+
+    p = finger.fingerFastSearch();
+    if (p != FINGERPRINT_OK)
+        return -1;
+
+    return finger.fingerID;
+}
+
+int FingerSensor::deleteFingerPrintFromDB(int id)
+{
+    uint8_t p = -1;
+
+    p = finger.deleteModel(id);
+
+    if (p == FINGERPRINT_OK)
+    {
+        Serial.println("Deleted!");
+    }
+    else if (p == FINGERPRINT_PACKETRECIEVEERR)
+    {
+        Serial.println("Communication error");
+    }
+    else if (p == FINGERPRINT_BADLOCATION)
+    {
+        Serial.println("Could not delete in that location");
+    }
+    else if (p == FINGERPRINT_FLASHERR)
+    {
+        Serial.println("Error writing to flash");
+    }
+    else
+    {
+        Serial.print("Unknown error: 0x");
+        Serial.println(p, HEX);
+    }
+
+    return p;
 }
