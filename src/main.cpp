@@ -98,8 +98,6 @@ void trigger1()
   myNex.writeStr("page 5");
   Sensor.enrollFinger(id);
   myNex.writeStr("page 6");
-  delay(1000);
-  myNex.writeStr("page 5");
   Sensor.verifyFinger(id);
   myNex.writeStr("page 7");
 
