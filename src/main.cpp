@@ -92,7 +92,8 @@ void trigger0()
 
 void trigger1()
 {
-  if(!validateAction()) return;
+  if (!validateAction())
+    return;
   myNex.writeStr("page 2");
   String nombre = myNex.readStr("t1.txt");
   int id = myNex.readNumber("n0.val");
@@ -125,8 +126,6 @@ void trigger2()
 
 void trigger3()
 {
-  if(!validateAction()) return;
-  myNex.writeStr("page 4");
   char t = 't';
   for (int i = 0; i < 6; i++)
   {
@@ -135,6 +134,9 @@ void trigger3()
     int value = myNex.readNumber(data);
     if (value == 63488)
     {
+      if (!validateAction())
+        return;
+
       Sensor.deleteFingerPrintFromDB(members[i].id);
       deleteAndSaveData(i);
       myNex.writeStr("page 8");
