@@ -31,6 +31,7 @@ void prossesAndSaveData(String, int);
 void loadInfo(File);
 int seekMatch(int);
 void deleteAndSaveData(int);
+bool validateAction();
 
 void setup()
 {
@@ -89,9 +90,10 @@ void trigger0()
   myNex.writeStr("page 0");
 }
 
-/* TODO: AGERGAR PASO DE SEGURIDAD */
 void trigger1()
 {
+  if(!validateAction()) return;
+  myNex.writeStr("page 2");
   String nombre = myNex.readStr("t1.txt");
   int id = myNex.readNumber("n0.val");
 
@@ -120,9 +122,11 @@ void trigger2()
     myNex.writeStr(data, members[i].name);
   }
 }
-/* TODO: AGREGAR UN PASO DE VERFICACIÓN */
+
 void trigger3()
 {
+  if(!validateAction()) return;
+  myNex.writeStr("page 4");
   char t = 't';
   for (int i = 0; i < 6; i++)
   {
@@ -139,6 +143,31 @@ void trigger3()
       return;
     }
   }
+}
+
+bool validateAction()
+{
+  Serial.println("aca presente");
+  timerWrite(timer, 0);
+  timerAlarmWrite(timer, 10000000, false);
+  timerAlarmEnable(timer);
+  myNex.writeStr("page 11");
+  while (personID == -1)
+  {
+    personID = Sensor.identifingFinger();
+    if (timeOut)
+    {
+      myNex.writeStr("page 9");
+      delay(1000);
+      myNex.writeStr("page 0");
+      timeOut = false;
+      timerWrite(timer, 0);
+      return false;
+    }
+  }
+  personID = -1;
+  timerAlarmDisable(timer);
+  return true;
 }
 
 void IRAM_ATTR onTimer()
