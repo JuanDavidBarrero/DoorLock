@@ -94,6 +94,8 @@ void trigger1()
 {
   if (!validateAction())
     return;
+  myNex.writeStr("page 12");
+  delay(1000);
   myNex.writeStr("page 2");
   String nombre = myNex.readStr("t1.txt");
   int id = myNex.readNumber("n0.val");
@@ -130,7 +132,6 @@ void trigger3()
   for (int i = 0; i < 6; i++)
   {
     String data = t + String(i + 1) + ".pco";
-    String name = t + String(i + 1) + ".txt";
     int value = myNex.readNumber(data);
     if (value == 63488)
     {
