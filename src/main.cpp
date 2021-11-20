@@ -130,7 +130,7 @@ void trigger3()
     int value = myNex.readNumber(data);
     if (value == 63488)
     {
-      Sensor.deleteFingerPrintFromDB(i + 1);
+      Sensor.deleteFingerPrintFromDB(members[i].id);
       deleteAndSaveData(i);
       myNex.writeStr("page 8");
       delay(1000);
