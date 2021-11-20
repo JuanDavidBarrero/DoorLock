@@ -30,6 +30,7 @@ Family members[127];
 void prossesAndSaveData(String, int);
 void loadInfo(File);
 int seekMatch(int);
+void deleteAndSaveData(int);
 
 void setup()
 {
@@ -107,6 +108,38 @@ void trigger1()
   myNex.writeStr("page 2");
 }
 
+void trigger2()
+{
+  char t = 't';
+  for (int i = 0; i < 6; i++)
+  {
+    String data = t + String(i + 1) + ".txt";
+    if (members[i].name == "")
+      continue;
+    myNex.writeStr(data, members[i].name);
+  }
+}
+
+void trigger3()
+{
+  char t = 't';
+  for (int i = 0; i < 6; i++)
+  {
+    String data = t + String(i + 1) + ".pco";
+    String name = t + String(i + 1) + ".txt";
+    int value = myNex.readNumber(data);
+    if (value == 63488)
+    {
+      Sensor.deleteFingerPrintFromDB(i + 1);
+      deleteAndSaveData(i);
+      myNex.writeStr("page 8");
+      delay(1000);
+      myNex.writeStr("page 0");
+      return;
+    }
+  }
+}
+
 void IRAM_ATTR onTimer()
 {
   portENTER_CRITICAL_ISR(&timerMux);
@@ -146,7 +179,6 @@ void loadInfo(File data)
 
 int seekMatch(int personID)
 {
-
   int size = sizeof(members) / sizeof(members[0]);
 
   for (int i = 0; i < size; i++)
@@ -158,9 +190,18 @@ int seekMatch(int personID)
   }
   return -1;
 }
-// void trigger2()
-// {
-//   Serial.printf("id para ser eliminado\n");
-//   int id = myNex.readNumber("t1.pco");
-//   Serial.printf("El nombre enviado fue %i\n", id);
-// }
+
+void deleteAndSaveData(int id)
+{
+  String info = "";
+  familyData.remove(id);
+  serializeJson(familyData, info);
+  if (DB.saveData(info))
+  {
+    Serial.println("Información guardada");
+    File data = DB.openData();
+    members[id].name = "";
+    members[id].id = 0;
+    loadInfo(data);
+  }
+}
