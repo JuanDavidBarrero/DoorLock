@@ -89,6 +89,7 @@ void trigger0()
   myNex.writeStr("page 0");
 }
 
+/* TODO: AGERGAR PASO DE SEGURIDAD */
 void trigger1()
 {
   String nombre = myNex.readStr("t1.txt");
@@ -119,7 +120,7 @@ void trigger2()
     myNex.writeStr(data, members[i].name);
   }
 }
-
+/* TODO: AGREGAR UN PASO DE VERFICACIÓN */
 void trigger3()
 {
   char t = 't';
