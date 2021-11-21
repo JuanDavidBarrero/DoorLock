@@ -75,7 +75,6 @@ int FingerSensor::enrollFinger(int id)
         return p;
     }
     return 1;
-    finger.CloseLED();
 }
 
 int FingerSensor::verifyFinger(int id)
