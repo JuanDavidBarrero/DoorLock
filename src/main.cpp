@@ -150,6 +150,14 @@ void trigger3()
 
 bool validateAction()
 {
+
+  File data = DB.openData();
+  if (!data) return true;
+
+  deserializeJson(familyData,data);
+
+  if(data.size()==0) return true;
+
   Serial.println("aca presente");
   timerWrite(timer, 0);
   timerAlarmWrite(timer, 10000000, false);
@@ -170,6 +178,7 @@ bool validateAction()
   }
   personID = -1;
   timerAlarmDisable(timer);
+  DB.closeData(data);
   return true;
 }
 

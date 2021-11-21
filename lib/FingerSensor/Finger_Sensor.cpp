@@ -16,11 +16,13 @@ void FingerSensor::initFingerSentor()
             delay(1000);
         }
     }
+    finger.CloseLED();
     Serial.print("Found finger print sensor \n");
 }
 
 int FingerSensor::enrollFinger(int id)
 {
+    finger.OpenLED();
     if (id == 0)
         return -1;
     Serial.printf("Enrolling ID # %i \n", id);
@@ -73,10 +75,12 @@ int FingerSensor::enrollFinger(int id)
         return p;
     }
     return 1;
+    finger.CloseLED();
 }
 
 int FingerSensor::verifyFinger(int id)
 {
+    finger.OpenLED();
     Serial.println("Remove finger");
     delay(2000);
 
@@ -163,6 +167,7 @@ int FingerSensor::verifyFinger(int id)
     if (p == FINGERPRINT_OK)
     {
         Serial.println("Stored!");
+        finger.CloseLED();
     }
     else if (p == FINGERPRINT_PACKETRECIEVEERR)
     {
@@ -186,6 +191,7 @@ int FingerSensor::verifyFinger(int id)
     }
 
     return true;
+    
 }
 
 bool FingerSensor::checkDB()
@@ -203,6 +209,7 @@ bool FingerSensor::checkDB()
 
 int FingerSensor::identifingFinger()
 {
+    finger.OpenLED();
     int p = finger.getImage();
     if (p != FINGERPRINT_OK)
         return -1;
@@ -214,6 +221,8 @@ int FingerSensor::identifingFinger()
     p = finger.fingerFastSearch();
     if (p != FINGERPRINT_OK)
         return -1;
+
+    finger.CloseLED();
 
     return finger.fingerID;
 }
@@ -245,6 +254,5 @@ int FingerSensor::deleteFingerPrintFromDB(int id)
         Serial.print("Unknown error: 0x");
         Serial.println(p, HEX);
     }
-
     return p;
 }
