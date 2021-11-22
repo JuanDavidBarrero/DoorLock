@@ -11,8 +11,8 @@
 MFRC522 mfrc522(SS_PIN, RST_PIN);
 
 Storage DB;
-DynamicJsonDocument familyData(300);
-DynamicJsonDocument newMember(150);
+DynamicJsonDocument familyData(450);
+DynamicJsonDocument newMember(200);
 
 hw_timer_t *timer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
@@ -33,12 +33,13 @@ struct Family
 };
 Family members[127];
 
-void prossesAndSaveData(String, int);
+void prossesAndSaveData(String, int, byte *);
 void loadInfo(File);
 int seekMatch(int);
 void deleteAndSaveData(int);
 bool validateAction();
-bool checkUIDRFID(byte*);
+bool checkUIDRFID(byte *);
+byte *UIDfromCard();
 
 void setup()
 {
@@ -108,6 +109,7 @@ void trigger1()
   myNex.writeStr("page 2");
   String nombre = myNex.readStr("t1.txt");
   int id = myNex.readNumber("n0.val");
+  bool card = myNex.readNumber("n1.val");
 
   if (id == 0 || id > 127)
     return;
@@ -117,7 +119,17 @@ void trigger1()
   Sensor.verifyFinger(id);
   myNex.writeStr("page 7");
 
-  prossesAndSaveData(nombre, id);
+  if (card)
+  {
+    byte *password = UIDfromCard();
+    prossesAndSaveData(nombre, id, password);
+  }
+  else{
+    byte *noPassword = {0x0};
+    prossesAndSaveData(nombre, id, noPassword);
+  }
+
+  
 
   delay(1500);
   myNex.writeStr("page 2");
@@ -200,11 +212,16 @@ void IRAM_ATTR onTimer()
   portEXIT_CRITICAL_ISR(&timerMux);
 }
 
-void prossesAndSaveData(String nombre, int id)
+void prossesAndSaveData(String nombre, int id, byte *password)
 {
   String info = "";
   newMember["name"] = nombre;
   newMember["id"] = id;
+  for (int i = 0; i < 4; i++)
+  {
+    newMember["cardUID"][i] = password[i];
+  }
+  
   familyData.add(newMember);
   serializeJson(familyData, info);
   if (DB.saveData(info))
@@ -226,6 +243,10 @@ void loadInfo(File data)
     String nombre = familyData[i]["name"];
     members[i].name = nombre;
     members[i].id = familyData[i]["id"];
+    for (int j = 0; j < 4; j++)
+    {
+      members[i].cardUID[j] = familyData["cardUID"][j];
+    }
   }
   DB.closeData(data);
 }
@@ -259,7 +280,7 @@ void deleteAndSaveData(int id)
   }
 }
 
-bool checkUIDRFID(byte*password)
+bool checkUIDRFID(byte *password)
 {
   for (int i = 0; i < 4; i++)
   {
@@ -269,4 +290,14 @@ bool checkUIDRFID(byte*password)
     }
   }
   return true;
+}
+
+byte *UIDfromCard()
+{
+  byte *arr = new byte[4];
+  for (int i = 0; i < 4; i++)
+  {
+    arr[i] = mfrc522.uid.uidByte[i];
+  }
+  return arr;
 }
