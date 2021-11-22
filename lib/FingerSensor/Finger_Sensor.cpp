@@ -16,13 +16,13 @@ void FingerSensor::initFingerSentor()
             delay(1000);
         }
     }
-    finger.CloseLED();
+    finger.LEDcontrol(0);
     Serial.print("Found finger print sensor \n");
 }
 
 int FingerSensor::enrollFinger(int id)
 {
-    finger.OpenLED();
+    finger.LEDcontrol(1);
     if (id == 0)
         return -1;
     Serial.printf("Enrolling ID # %i \n", id);
@@ -79,7 +79,6 @@ int FingerSensor::enrollFinger(int id)
 
 int FingerSensor::verifyFinger(int id)
 {
-    finger.OpenLED();
     Serial.println("Remove finger");
     delay(2000);
 
@@ -166,7 +165,7 @@ int FingerSensor::verifyFinger(int id)
     if (p == FINGERPRINT_OK)
     {
         Serial.println("Stored!");
-        finger.CloseLED();
+        finger.LEDcontrol(false);
     }
     else if (p == FINGERPRINT_PACKETRECIEVEERR)
     {
@@ -208,7 +207,7 @@ bool FingerSensor::checkDB()
 
 int FingerSensor::identifingFinger()
 {
-    finger.OpenLED();
+    finger.LEDcontrol(true);
     int p = finger.getImage();
     if (p != FINGERPRINT_OK)
         return -1;
@@ -221,7 +220,7 @@ int FingerSensor::identifingFinger()
     if (p != FINGERPRINT_OK)
         return -1;
 
-    finger.CloseLED();
+    finger.LEDcontrol(false);
 
     return finger.fingerID;
 }
