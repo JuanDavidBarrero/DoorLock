@@ -1,9 +1,14 @@
 #include <Arduino.h>
 #include <EasyNextionLibrary.h>
 #include <ArduinoJson.h>
+#include <MFRC522.h>
 
 #include <Finger_Sensor.h>
 #include <Storage.h>
+
+#define RST_PIN 9
+#define SS_PIN 5
+MFRC522 mfrc522(SS_PIN, RST_PIN);
 
 Storage DB;
 DynamicJsonDocument familyData(300);
@@ -38,6 +43,8 @@ void setup()
   Serial.begin(115200);
   myNex.begin(9600);
   DB.initSPIFFS();
+  SPI.begin();        
+  mfrc522.PCD_Init(); 
 
   File data = DB.openData();
   loadInfo(data);
@@ -152,11 +159,13 @@ bool validateAction()
 {
 
   File data = DB.openData();
-  if (!data) return true;
+  if (!data)
+    return true;
 
-  deserializeJson(familyData,data);
+  deserializeJson(familyData, data);
 
-  if(data.size()==0) return true;
+  if (data.size() == 0)
+    return true;
 
   Serial.println("aca presente");
   timerWrite(timer, 0);
