@@ -29,6 +29,7 @@ struct Family
 {
   String name;
   int id;
+  byte cardUID[4];
 };
 Family members[127];
 
@@ -37,14 +38,15 @@ void loadInfo(File);
 int seekMatch(int);
 void deleteAndSaveData(int);
 bool validateAction();
+bool checkUIDRFID(byte*);
 
 void setup()
 {
   Serial.begin(115200);
   myNex.begin(9600);
   DB.initSPIFFS();
-  SPI.begin();        
-  mfrc522.PCD_Init(); 
+  SPI.begin();
+  mfrc522.PCD_Init();
 
   File data = DB.openData();
   loadInfo(data);
@@ -255,4 +257,16 @@ void deleteAndSaveData(int id)
     members[id].id = 0;
     loadInfo(data);
   }
+}
+
+bool checkUIDRFID(byte*password)
+{
+  for (int i = 0; i < 4; i++)
+  {
+    if (password[i] != mfrc522.uid.uidByte[i])
+    {
+      return false;
+    }
+  }
+  return true;
 }
