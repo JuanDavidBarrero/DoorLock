@@ -189,7 +189,6 @@ int FingerSensor::verifyFinger(int id)
     }
 
     return true;
-    
 }
 
 bool FingerSensor::checkDB()
@@ -253,4 +252,9 @@ int FingerSensor::deleteFingerPrintFromDB(int id)
         Serial.println(p, HEX);
     }
     return p;
+}
+
+void FingerSensor::controlLed(bool on)
+{
+    finger.LEDcontrol(on);
 }

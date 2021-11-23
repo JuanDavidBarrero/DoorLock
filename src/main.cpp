@@ -75,7 +75,7 @@ void trigger0()
   timerWrite(timer, 0);
   timerAlarmWrite(timer, 10000000, false);
   timerAlarmEnable(timer);
-  myNex.writeStr("page 5");
+  myNex.writeStr("page 16");
 
   while (personID == -1)
   {
@@ -90,6 +90,7 @@ void trigger0()
         myNex.writeStr("page 1");
         myNex.writeStr("t1.txt", members[id].name);
         timerAlarmDisable(timer);
+        Sensor.controlLed();
         delay(3000);
         myNex.writeStr("page 0");
         return;
@@ -129,7 +130,7 @@ void trigger1()
   myNex.writeStr("page 2");
   String nombre = myNex.readStr("t1.txt");
   int id = myNex.readNumber("n0.val");
-  int card = myNex.readNumber("n1.val");
+  int isCard = myNex.readNumber("r0.val");
 
   if (id == 0 || id > 127)
     return;
@@ -139,7 +140,7 @@ void trigger1()
   Sensor.verifyFinger(id);
   myNex.writeStr("page 7");
 
-  if (card)
+  if (isCard)
   {
     myNex.writeStr("page 15");
     while (true)
@@ -159,7 +160,7 @@ void trigger1()
     prossesAndSaveData(nombre, id, noPassword);
   }
 
-  delay(1500);
+  delay(2000);
   myNex.writeStr("page 0");
 }
 
@@ -211,7 +212,6 @@ bool validateAction()
   if (data.size() == 0)
     return true;
 
-  Serial.println("aca presente");
   timerWrite(timer, 0);
   timerAlarmWrite(timer, 10000000, false);
   timerAlarmEnable(timer);
@@ -311,6 +311,7 @@ void deleteAndSaveData(int id)
 {
   String info = "";
   familyData.remove(id);
+
   serializeJson(familyData, info);
   if (DB.saveData(info))
   {
@@ -318,6 +319,11 @@ void deleteAndSaveData(int id)
     File data = DB.openData();
     members[id].name = "";
     members[id].id = 0;
+    for (int i = 0; i < 4; i++)
+    {
+      members[id].cardUID[i] = 0;
+    }
+    
     loadInfo(data);
   }
 }

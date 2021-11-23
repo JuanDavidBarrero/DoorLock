@@ -17,6 +17,7 @@ public:
     bool checkDB();
     int identifingFinger();
     int deleteFingerPrintFromDB(int);
+    void controlLed(bool=false);
 };
 
 #endif
