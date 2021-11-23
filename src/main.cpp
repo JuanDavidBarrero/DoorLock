@@ -29,17 +29,19 @@ struct Family
 {
   String name;
   int id;
-  byte cardUID[4];
+  int cardUID[4];
 };
 Family members[127];
 
-void prossesAndSaveData(String, int, byte *);
+void prossesAndSaveData(String, int, int *);
 void loadInfo(File);
 int seekMatch(int);
 void deleteAndSaveData(int);
 bool validateAction();
-bool checkUIDRFID(byte *);
-byte *UIDfromCard();
+bool confirmUID(int *);
+int *UIDfromCard();
+bool checkCardAvailable();
+int seekUserbyUID(int *);
 
 void setup()
 {
@@ -67,6 +69,7 @@ void loop()
   myNex.NextionListen();
 }
 
+/* Verificar usuario este en DB */
 void trigger0()
 {
   timerWrite(timer, 0);
@@ -77,6 +80,22 @@ void trigger0()
   while (personID == -1)
   {
     personID = Sensor.identifingFinger();
+
+    if (checkCardAvailable())
+    {
+      int *uid = UIDfromCard();
+      if (confirmUID(uid))
+      {
+        int id = seekUserbyUID(uid);
+        myNex.writeStr("page 1");
+        myNex.writeStr("t1.txt", members[id].name);
+        timerAlarmDisable(timer);
+        delay(3000);
+        myNex.writeStr("page 0");
+        return;
+      }
+    }
+
     if (timeOut)
     {
       myNex.writeStr("page 9");
@@ -100,6 +119,7 @@ void trigger0()
   myNex.writeStr("page 0");
 }
 
+/* Añadir usuario a DB */
 void trigger1()
 {
   if (!validateAction())
@@ -109,7 +129,7 @@ void trigger1()
   myNex.writeStr("page 2");
   String nombre = myNex.readStr("t1.txt");
   int id = myNex.readNumber("n0.val");
-  bool card = myNex.readNumber("n1.val");
+  int card = myNex.readNumber("n1.val");
 
   if (id == 0 || id > 127)
     return;
@@ -121,20 +141,29 @@ void trigger1()
 
   if (card)
   {
-    byte *password = UIDfromCard();
-    prossesAndSaveData(nombre, id, password);
+    myNex.writeStr("page 15");
+    while (true)
+    {
+      if (checkCardAvailable())
+      {
+        int *password = UIDfromCard();
+        prossesAndSaveData(nombre, id, password);
+        myNex.writeStr("page 7");
+        break;
+      }
+    }
   }
-  else{
-    byte *noPassword = {0x0};
+  else
+  {
+    int *noPassword = NULL;
     prossesAndSaveData(nombre, id, noPassword);
   }
 
-  
-
   delay(1500);
-  myNex.writeStr("page 2");
+  myNex.writeStr("page 0");
 }
 
+/* Cargar usurios en pantalla */
 void trigger2()
 {
   char t = 't';
@@ -147,6 +176,7 @@ void trigger2()
   }
 }
 
+/* Eliminar usuario de DB */
 void trigger3()
 {
   char t = 't';
@@ -212,16 +242,27 @@ void IRAM_ATTR onTimer()
   portEXIT_CRITICAL_ISR(&timerMux);
 }
 
-void prossesAndSaveData(String nombre, int id, byte *password)
+void prossesAndSaveData(String nombre, int id, int *password)
 {
   String info = "";
   newMember["name"] = nombre;
   newMember["id"] = id;
-  for (int i = 0; i < 4; i++)
+
+  if (password == NULL)
   {
-    newMember["cardUID"][i] = password[i];
+    for (int i = 0; i < 4; i++)
+    {
+      newMember["cardUID"][i] = 0;
+    }
   }
-  
+  else
+  {
+    for (int i = 0; i < 4; i++)
+    {
+      newMember["cardUID"][i] = password[i];
+    }
+  }
+
   familyData.add(newMember);
   serializeJson(familyData, info);
   if (DB.saveData(info))
@@ -245,7 +286,8 @@ void loadInfo(File data)
     members[i].id = familyData[i]["id"];
     for (int j = 0; j < 4; j++)
     {
-      members[i].cardUID[j] = familyData["cardUID"][j];
+      int uid = familyData[i]["cardUID"][j];
+      members[i].cardUID[j] = uid;
     }
   }
   DB.closeData(data);
@@ -280,24 +322,73 @@ void deleteAndSaveData(int id)
   }
 }
 
-bool checkUIDRFID(byte *password)
+bool confirmUID(int *password)
 {
-  for (int i = 0; i < 4; i++)
+  int count = 0;
+  for (int i = 0; i < 127; i++)
   {
-    if (password[i] != mfrc522.uid.uidByte[i])
+    for (int j = 0; j < 4; j++)
     {
-      return false;
+      if (password[j] == members[i].cardUID[j])
+      {
+        count++;
+      }
     }
+    if (count == 4)
+    {
+      return true;
+    }
+    count = 0;
   }
-  return true;
+
+  return false;
 }
 
-byte *UIDfromCard()
+int *UIDfromCard()
 {
-  byte *arr = new byte[4];
+  int *arr = new int[4];
   for (int i = 0; i < 4; i++)
   {
     arr[i] = mfrc522.uid.uidByte[i];
   }
   return arr;
+}
+
+int seekUserbyUID(int *uid)
+{
+  int size = sizeof(members) / sizeof(members[0]);
+
+  int count = 0;
+  for (int i = 0; i < size; i++)
+  {
+    for (int j = 0; j < 4; j++)
+    {
+      if (uid[j] == members[i].cardUID[j])
+      {
+        count++;
+      }
+    }
+    if (count == 4)
+    {
+      return i;
+    }
+    count = 0;
+  }
+
+  return -1;
+}
+
+bool checkCardAvailable()
+{
+  if (!mfrc522.PICC_IsNewCardPresent())
+  {
+    return false;
+  }
+
+  if (!mfrc522.PICC_ReadCardSerial())
+  {
+    return false;
+  }
+
+  return true;
 }
