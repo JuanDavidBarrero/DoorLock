@@ -138,7 +138,6 @@ void trigger1()
   Sensor.enrollFinger(id);
   myNex.writeStr("page 6");
   Sensor.verifyFinger(id);
-  myNex.writeStr("page 7");
 
   if (isCard)
   {
@@ -219,6 +218,16 @@ bool validateAction()
   while (personID == -1)
   {
     personID = Sensor.identifingFinger();
+    if (checkCardAvailable())
+    {
+      int *uid = UIDfromCard();
+      if (confirmUID(uid))
+      {
+        timerAlarmDisable(timer);
+        Sensor.controlLed();
+        return true;
+      }
+    }
     if (timeOut)
     {
       myNex.writeStr("page 9");
@@ -323,7 +332,7 @@ void deleteAndSaveData(int id)
     {
       members[id].cardUID[i] = 0;
     }
-    
+
     loadInfo(data);
   }
 }
